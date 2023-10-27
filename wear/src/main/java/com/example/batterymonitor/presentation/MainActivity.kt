@@ -6,9 +6,12 @@
 
 package com.example.batterymonitor.presentation
 
-import com.example.batterymonitor.BatteryMonitoringService
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
+import android.view.Surface
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -16,58 +19,59 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import com.example.batterymonitor.R
-import com.example.batterymonitor.presentation.theme.BatterymonitorTheme
+import com.example.batterymonitor.BatteryMonitoringService
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            WearApp("Android")
-        }
-//        val intent = Intent(this, BatteryMonitoringService::class.java)
-//        startService(intent)
-    }
-}
+        val serviceIntent = Intent(this, BatteryMonitoringService::class.java)
+        startForegroundService(serviceIntent)
 
-@Composable
-fun WearApp(greetingName: String) {
-    BatterymonitorTheme {
-        /* If you have enough items in your list, use [ScalingLazyColumn] which is an optimized
-         * version of LazyColumn for wear devices with some added features. For more information,
-         * see d.android.com/wear/compose.
-         */
+        setContent {
+            WearApp()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+    }
+
+    @Composable
+    fun WearApp() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colors.background),
             verticalArrangement = Arrangement.Center
         ) {
-            Greeting(greetingName = greetingName)
+            Text(
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colors.primary,
+                text = "This app sends the battery percentage to companion phone app when the watch is charging"
+            )
         }
     }
-}
 
-@Composable
-fun Greeting(greetingName: String) {
-    Text(
-        modifier = Modifier.fillMaxWidth(),
-        textAlign = TextAlign.Center,
-        color = MaterialTheme.colors.primary,
-        text = "This app sends the battery percentage to companion phone app when the watch is charging"
-    )
-}
-
-@Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
-@Composable
-fun DefaultPreview() {
-    WearApp("Preview Android")
+    @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
+    @Composable
+    fun DefaultPreview() {
+        WearApp()
+    }
 }
