@@ -1,39 +1,102 @@
 package com.example.batterymonitor
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
+import android.os.SystemClock
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.google.android.gms.wearable.DataClient
+import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.PutDataRequest
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
 
 class BatteryMonitoringService : Service() {
+    class PowerConnectionReceiver(private val service: BatteryMonitoringService) :
 
-    private val handler = Handler(Looper.myLooper()!!)
-    private val runnable: Runnable = object : Runnable {
-        override fun run() {
-            val isCharging = updateBatteryPercentage()
-            if (isCharging)
-                handler.postDelayed(this, 3000)
+        BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            Log.d("WatchChargingMonitor", "Received ${intent.action}")
+            val action = intent.action ?: return
+            if (action == Intent.ACTION_POWER_CONNECTED) {
+                val thread = Thread {
+                    service.startMonitoring()
+                }
+                thread.start()
+            }
         }
+    }
+
+    private val receiver = PowerConnectionReceiver(this)
+    fun startMonitoring() {
+        Log.i("WatchChargingMonitor", "Charge monitoring started")
+        var isCharging = true
+        while (isCharging) {
+            Log.d("WatchChargingMonitor", "Sending...")
+            isCharging = updateBatteryPercentage()
+            Thread.sleep(1000)
+            /* TODO: If the user unplugs and plugs while this thread is sleeping,
+                PowerConnectionReceiver will receive another plugged event and start another thread.
+                This could become a problem if too many threads start.
+                But after charging stops for 10 seconds, all threads would stop, so should be fine.
+             */
+        }
+        Log.i("WatchChargingMonitor", "Charge monitoring finished")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        handler.postDelayed(runnable, 30000)
+        initForegroundService()
+        initReceiver()
+        Log.i("WatchChargingMonitor", "Service started")
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(receiver)
+    }
+
+    private fun initReceiver() {
+        val intentFilter = IntentFilter()
+        intentFilter.addAction("android.intent.action.ACTION_POWER_CONNECTED")
+        // intentFilter.addAction("android.intent.action.ACTION_POWER_DISCONNECTED")
+        registerReceiver(receiver, intentFilter)
+    }
+
+    private fun initForegroundService() {
+        val foregroundChannelId = "Foreground Service"
+        val name = "Batterymonitor (Foreground Service)"
+        val descriptionText = ""
+        val importance = NotificationManager.IMPORTANCE_LOW
+        val channel = NotificationChannel(foregroundChannelId, name, importance).apply {
+            description = descriptionText
+        }
+        // Register the channel with the system.
+        val notificationManager: NotificationManager =
+            getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+        val notification = NotificationCompat.Builder(this, foregroundChannelId)
+            .setSmallIcon(R.drawable.cogs)
+            .setContentTitle("Battery Monitor")
+            .setContentText("Battery monitor foreground service is running")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+        startForeground(1, notification)
+    }
+
     private fun updateBatteryPercentage(): Boolean {
+        val batteryLevelUnknown = 1000
         val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
             this.registerReceiver(null, ifilter)
         }
-
-        val batteryLevelUnknown = 1000
         val batteryLevel: Int = batteryStatus?.let {
             val level: Int =
                 it.getIntExtra(BatteryManager.EXTRA_LEVEL, batteryLevelUnknown)
@@ -49,9 +112,6 @@ class BatteryMonitoringService : Service() {
         val status: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
         val isCharging: Boolean =
             status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
-        // val chargePlug: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1) ?: -1
-        // val usbCharge: Boolean = chargePlug == BatteryManager.BATTERY_PLUGGED_USB
-        // val acCharge: Boolean = chargePlug == BatteryManager.BATTERY_PLUGGED_AC
         val timestamp = System.currentTimeMillis()
         val msg = JSONObject()
         msg.put("timestamp", timestamp)
@@ -63,15 +123,20 @@ class BatteryMonitoringService : Service() {
 
     private fun phoneCommunication(data: String) {
         val dataClient = Wearable.getDataClient(this)
-        val dataPath = "/battery"
+        val dataPath = "/WatchChargingMonitor"
         val dataMap = PutDataMapRequest.create(dataPath)
         dataMap.dataMap.putString("data", data)
         val request: PutDataRequest = dataMap.asPutDataRequest()
-        dataClient.putDataItem(request)
-        // val putDataTask: Task<*> = dataClient.putDataItem(request)
-        // putDataTask
-            // .addOnSuccessListener(OnSuccessListener<Any?> { _ -> println("[Wear] putDataTask Success")})
-            // .addOnFailureListener(OnFailureListener { _ -> println("[Wear] putDataTask Fail")})
+        val putDataTask = dataClient.putDataItem(request)
+        putDataTask.addOnFailureListener { _ ->
+            Log.w("WatchChargingMonitor", "Could not send data to phone")
+        }
+        putDataTask.addOnSuccessListener { _ ->
+            Log.d(
+                "WatchChargingMonitor",
+                "Sent data: $data"
+            )
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? {
