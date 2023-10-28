@@ -1,6 +1,5 @@
 package com.example.batterymonitor
 
-import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -19,22 +18,22 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         val picker = findViewById<NumberPicker>(R.id.numberpicker)
         val pickerValueFile = File(filesDir, pickerValueFileName)
-        if(pickerValueFile.exists()){
-            openFileInput(pickerValueFile.name).use {stream ->
+        if (pickerValueFile.exists()) {
+            openFileInput(pickerValueFile.name).use { stream ->
                 val value = stream.bufferedReader().use {
                     it.readText()
                 }
                 println("[Phone] Read value $value")
                 try {
                     pickerValue = value.toInt()
-                } catch(_: Exception){
+                } catch (_: Exception) {
                 }
             }
         }
         picker.maxValue = 99
         picker.minValue = 15
         picker.value = pickerValue
-        picker.setOnValueChangedListener{ _, _, current ->
+        picker.setOnValueChangedListener { _, _, current ->
             val updateIntent = Intent("NotifyValueUpdate")
             updateIntent.putExtra("notifyValue", current)
             sendBroadcast(updateIntent)
