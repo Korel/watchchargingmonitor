@@ -42,12 +42,7 @@ class BatteryMonitoringService : Service() {
         while (isCharging) {
             Log.d("WatchChargingMonitor", "Sending...")
             isCharging = updateBatteryPercentage()
-            Thread.sleep(1000)
-            /* TODO: If the user unplugs and plugs while this thread is sleeping,
-                PowerConnectionReceiver will receive another plugged event and start another thread.
-                This could become a problem if too many threads start.
-                But after charging stops for 10 seconds, all threads would stop, so should be fine.
-             */
+            Thread.sleep(3000)
         }
         Log.i("WatchChargingMonitor", "Charge monitoring finished")
     }
