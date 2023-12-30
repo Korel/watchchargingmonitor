@@ -42,7 +42,7 @@ class BatteryMonitoringService : Service() {
         while (isCharging) {
             Log.d("WatchChargingMonitor", "Sending...")
             isCharging = updateBatteryPercentage()
-            Thread.sleep(3000)
+            Thread.sleep(10000)
         }
         Log.i("WatchChargingMonitor", "Charge monitoring finished")
     }
@@ -106,7 +106,8 @@ class BatteryMonitoringService : Service() {
 
         val status: Int = batteryStatus?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
         val isCharging: Boolean =
-            status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+             status == BatteryManager.BATTERY_STATUS_CHARGING || status == BatteryManager.BATTERY_STATUS_FULL
+
         val timestamp = System.currentTimeMillis()
         val msg = JSONObject()
         msg.put("timestamp", timestamp)
@@ -124,7 +125,7 @@ class BatteryMonitoringService : Service() {
         val request: PutDataRequest = dataMap.asPutDataRequest()
         val putDataTask = dataClient.putDataItem(request)
         putDataTask.addOnFailureListener { _ ->
-            Log.w("WatchChargingMonitor", "Could not send data to phone")
+                Log.w("WatchChargingMonitor", "Could not send data to phone")
         }
         putDataTask.addOnSuccessListener { _ ->
             Log.d(

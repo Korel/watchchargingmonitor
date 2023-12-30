@@ -9,7 +9,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.IBinder
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -113,10 +116,12 @@ class BatteryMonitoringService : Service() {
         val dataClient = Wearable.getDataClient(this)
         dataClient.addListener { dataEventBuffer ->
             for (event in dataEventBuffer) {
+                Log.d("Watchbatterymonitor", "Event received: $event")
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item: DataItem = event.dataItem
                     if (item.uri.path == dataPath) {
                         val data: String? = DataMapItem.fromDataItem(item).dataMap.getString("data")
+                        Log.d("Watchbatterymonitor", "Event data: $data")
                         val msg = JSONObject(data!!)
                         // val timestamp = msg.getLong("timestamp")
                         val batteryLevel = msg.getInt("batteryLevel")
@@ -130,6 +135,7 @@ class BatteryMonitoringService : Service() {
         return START_STICKY
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate() {
         super.onCreate()
         initForegroundService()
