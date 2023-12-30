@@ -86,6 +86,7 @@ class BatteryMonitoringService : Service() {
         if (!isCharging) {
             mainNotificationBuilder.setContentText("Charging stopped")
             mainNotificationBuilder.setOngoing(false)
+            didWarn = false
         }
 
         with(NotificationManagerCompat.from(this)) {
