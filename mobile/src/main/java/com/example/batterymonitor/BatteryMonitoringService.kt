@@ -82,10 +82,8 @@ class BatteryMonitoringService : Service() {
             makeLoudNotification(notifyValue)
         }
         mainNotificationBuilder.setContentText("Battery level: $batteryLevel%")
-        mainNotificationBuilder.setOngoing(true)
         if (!isCharging) {
             mainNotificationBuilder.setContentText("Charging stopped")
-            mainNotificationBuilder.setOngoing(false)
             didWarn = false
         }
 
