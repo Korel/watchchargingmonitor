@@ -38,6 +38,7 @@ class BatteryMonitoringService : Service() {
                 // Update the notifyValue with the new value from the broadcast
                 notifyValue = intent.getIntExtra("notifyValue", notifyValue)
                 didWarn = false
+                Log.d("onReceive", "notifyValue changed to: $notifyValue")
             }
         }
     }
@@ -72,6 +73,7 @@ class BatteryMonitoringService : Service() {
     }
 
     private fun makeNotification(batteryLevel: Int, isCharging: Boolean) {
+        Log.d("makeNotification", "notifyValue: $notifyValue")
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
