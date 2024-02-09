@@ -112,6 +112,7 @@ class BatteryMonitoringService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        notifyValue = intent?.getIntExtra("notifyValue", notifyValue)!!
         createNotificationChannel()
         val dataPath = "/WatchChargingMonitor"
         val dataClient = Wearable.getDataClient(this)
