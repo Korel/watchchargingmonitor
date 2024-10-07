@@ -1,4 +1,4 @@
-package com.example.batterymonitor
+package dev.korel.watchbatterymonitor
 
 import android.Manifest
 import android.content.Intent
@@ -14,6 +14,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.example.batterymonitor.R
 import java.io.File
 import java.io.FileWriter
 
@@ -23,7 +24,7 @@ class MainActivity : AppCompatActivity() {
     private val pickerValueFileName = "pickervalue"
     private var pickerValue = 80
 
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)

@@ -1,4 +1,4 @@
-package com.example.batterymonitor.presentation.theme
+package dev.korel.watchbatterymonitor.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.wear.compose.material.Colors
