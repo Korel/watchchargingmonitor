@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_REMOTE_MESSAGING"/>
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -13,16 +14,16 @@
         android:roundIcon="@mipmap/main_icon_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Batterymonitor"
-        tools:targetApi="31">
+        tools:targetApi="34">
         <activity
-            android:name=".MainActivity"
+            android:name="dev.korel.watchbatterymonitor.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".BatteryMonitoringService" android:foregroundServiceType="remoteMessaging"/>
+        <service android:name="dev.korel.watchbatterymonitor.BatteryMonitoringService" android:foregroundServiceType="remoteMessaging"/>
     </application>
 
 </manifest>

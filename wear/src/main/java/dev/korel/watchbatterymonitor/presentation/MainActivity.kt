@@ -4,7 +4,7 @@
  * changes to the libraries and their usages.
  */
 
-package com.example.batterymonitor.presentation
+package dev.korel.watchbatterymonitor.presentation
 
 import android.content.Intent
 import android.os.Bundle
@@ -23,7 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
 import androidx.wear.ambient.AmbientLifecycleObserver
-import com.example.batterymonitor.BatteryMonitoringService
+import dev.korel.watchbatterymonitor.BatteryMonitoringService
 
 
 class MainActivity : ComponentActivity() {
