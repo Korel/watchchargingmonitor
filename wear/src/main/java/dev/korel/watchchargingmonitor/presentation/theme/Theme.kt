@@ -1,4 +1,4 @@
-package dev.korel.watchbatterymonitor.presentation.theme
+package dev.korel.watchchargingmonitor.presentation.theme
 
 import androidx.compose.runtime.Composable
 import androidx.wear.compose.material.MaterialTheme

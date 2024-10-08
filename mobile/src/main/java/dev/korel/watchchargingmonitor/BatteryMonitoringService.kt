@@ -1,4 +1,4 @@
-package dev.korel.watchbatterymonitor
+package dev.korel.watchchargingmonitor
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -16,16 +16,15 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.batterymonitor.R
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
-import org.json.JSONObject
 
 class BatteryMonitoringService : Service() {
     private val channelId = "Silent Channel"
     private val notificationId = 2
+    private val dataPath = "/WatchChargingMonitor"
     private var didWarn = false
     private var notifyValue = 80
     private val mainNotificationBuilder = NotificationCompat.Builder(this, channelId)
@@ -73,8 +72,7 @@ class BatteryMonitoringService : Service() {
         notificationManager.notify(notificationId + 1, builder.build())
     }
 
-    private fun makeNotification(batteryLevel: Int, isCharging: Boolean) {
-        Log.d("makeNotification", "notifyValue: $notifyValue")
+    private fun makeNotification(batteryLevel: Float, isCharging: Boolean) {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -84,9 +82,9 @@ class BatteryMonitoringService : Service() {
             didWarn = true
             makeLoudNotification(notifyValue)
         }
-        mainNotificationBuilder.setContentText("Battery level: $batteryLevel%")
+        mainNotificationBuilder.setContentText("Battery level: ${batteryLevel.toInt()}%")
         if (!isCharging) {
-            mainNotificationBuilder.setContentText("Charging stopped")
+            mainNotificationBuilder.setContentText("Charging stopped at ${batteryLevel.toInt()}%")
             didWarn = false
         }
 
@@ -112,29 +110,40 @@ class BatteryMonitoringService : Service() {
         startForeground(1, notification)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        notifyValue = intent?.getIntExtra("notifyValue", notifyValue)!!
-        createNotificationChannel()
-        val dataPath = "/WatchChargingMonitor"
+
+    private fun processDataEvent(event: DataEvent) {
+        try {
+            val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+            val batteryLevel = dataMap.getFloat("batteryLevel")
+            val isCharging = dataMap.getBoolean("isCharging")
+            makeNotification(batteryLevel, isCharging)
+        } catch (e: Exception) { // Catch broader exceptions
+            Log.e("Watchbatterymonitor", "Error processing data: ", e)
+        }
+    }
+
+    private fun setupListener() {
         val dataClient = Wearable.getDataClient(this)
         dataClient.addListener { dataEventBuffer ->
             for (event in dataEventBuffer) {
-                Log.d("Watchbatterymonitor", "Event received: $event")
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item: DataItem = event.dataItem
+                    Log.d("Watchbatterymonitor", "Received data: ${item.uri}")
+                    Log.d("Watchbatterymonitor", "Data path: ${item.uri.path}")
+                    Log.d("Watchbatterymonitor", "Data ${item.data}")
                     if (item.uri.path == dataPath) {
-                        val data: String? = DataMapItem.fromDataItem(item).dataMap.getString("data")
-                        Log.d("Watchbatterymonitor", "Event data: $data")
-                        val msg = JSONObject(data!!)
-                        // val timestamp = msg.getLong("timestamp")
-                        val batteryLevel = msg.getInt("batteryLevel")
-                        val isCharging = msg.getBoolean("isCharging")
-                        makeNotification(batteryLevel, isCharging)
+                        processDataEvent(event)
                     }
                 }
             }
             dataEventBuffer.release()
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("onStartCommand", "notifyValue: $notifyValue")
+        notifyValue = intent?.getIntExtra("notifyValue", notifyValue)!!
+        setupListener()
         return START_STICKY
     }
 
@@ -147,6 +156,7 @@ class BatteryMonitoringService : Service() {
             IntentFilter("NotifyValueUpdate"),
             RECEIVER_NOT_EXPORTED
         )
+        createNotificationChannel()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
