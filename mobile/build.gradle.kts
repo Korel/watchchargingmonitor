@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.batterymonitor"
+    namespace = "dev.korel.watchchargingmonitor"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.batterymonitor"
+        applicationId = "dev.korel.watchchargingmonitor"
         minSdk = 30
         targetSdk = 34
         versionCode = 1

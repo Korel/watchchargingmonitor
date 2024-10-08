@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.battery.batterymonitor">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACTION_POWER_CONNECTED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
     <uses-feature android:name="android.hardware.type.watch" />
 
     <application
@@ -36,7 +38,10 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".BatteryMonitoringService" />
+        <service
+            android:name=".BatteryMonitoringService"
+            android:foregroundServiceType="remoteMessaging" />
+        />
 
     </application>
 

@@ -1,4 +1,4 @@
-package dev.korel.watchbatterymonitor
+package dev.korel.watchchargingmonitor
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -16,22 +16,20 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.example.batterymonitor.R
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataItem
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.Wearable
-import org.json.JSONObject
 
 class BatteryMonitoringService : Service() {
     private val channelId = "Silent Channel"
     private val notificationId = 2
+    private val dataPath = "/WatchChargingMonitor"
     private var didWarn = false
     private var notifyValue = 80
-    private val mainNotificationBuilder = NotificationCompat.Builder(this, channelId)
-        .setSmallIcon(R.drawable.battery)
-        .setContentTitle("Watch Battery")
-        .setOnlyAlertOnce(true)
+    private val mainNotificationBuilder =
+        NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.battery)
+            .setContentTitle("Watch Battery").setOnlyAlertOnce(true)
 
     private val notifyValueReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -66,17 +64,17 @@ class BatteryMonitoringService : Service() {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
 
-        val builder = NotificationCompat.Builder(this, "Normal Channel")
-            .setSmallIcon(R.drawable.lightning)
-            .setContentTitle("Watch Battery is over $notifyLevel%!")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        val builder =
+            NotificationCompat.Builder(this, "Normal Channel").setSmallIcon(R.drawable.lightning)
+                .setContentTitle("Watch Battery is over $notifyLevel%!")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         notificationManager.notify(notificationId + 1, builder.build())
     }
 
-    private fun makeNotification(batteryLevel: Int, isCharging: Boolean) {
-        Log.d("makeNotification", "notifyValue: $notifyValue")
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
+    private fun makeNotification(batteryLevel: Float, isCharging: Boolean) {
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             return
         }
@@ -84,9 +82,9 @@ class BatteryMonitoringService : Service() {
             didWarn = true
             makeLoudNotification(notifyValue)
         }
-        mainNotificationBuilder.setContentText("Battery level: $batteryLevel%")
+        mainNotificationBuilder.setContentText("Battery level: ${batteryLevel.toInt()}%")
         if (!isCharging) {
-            mainNotificationBuilder.setContentText("Charging stopped")
+            mainNotificationBuilder.setContentText("Charging stopped at ${batteryLevel.toInt()}%")
             didWarn = false
         }
 
@@ -96,7 +94,7 @@ class BatteryMonitoringService : Service() {
     }
 
     private fun initForegroundService() {
-        val foregroundChannelId = "foregroundService"
+        val foregroundChannelId = "Foreground Service"
         val name = "Foreground Service"
         val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(foregroundChannelId, name, importance)
@@ -104,37 +102,47 @@ class BatteryMonitoringService : Service() {
         val notificationManager: NotificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
-        val notification = NotificationCompat.Builder(this, foregroundChannelId)
-            .setSmallIcon(R.drawable.cogs)
-            .setContentTitle("Battery Monitor")
-            .setContentText("Battery monitor foreground service is running")
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, foregroundChannelId).setSmallIcon(R.drawable.cogs)
+                .setContentTitle("Watch Charging Monitor")
+                .setContentText("Watch Charging Monitor foreground service is running").build()
         startForeground(1, notification)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        notifyValue = intent?.getIntExtra("notifyValue", notifyValue)!!
-        createNotificationChannel()
-        val dataPath = "/WatchChargingMonitor"
+
+    private fun processDataEvent(event: DataEvent) {
+        try {
+            val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+            val batteryLevel = dataMap.getFloat("batteryLevel")
+            val isCharging = dataMap.getBoolean("isCharging")
+            makeNotification(batteryLevel, isCharging)
+        } catch (e: Exception) { // Catch broader exceptions
+            Log.e("Watchbatterymonitor", "Error processing data: ", e)
+        }
+    }
+
+    private fun setupListener() {
         val dataClient = Wearable.getDataClient(this)
         dataClient.addListener { dataEventBuffer ->
             for (event in dataEventBuffer) {
-                Log.d("Watchbatterymonitor", "Event received: $event")
                 if (event.type == DataEvent.TYPE_CHANGED) {
                     val item: DataItem = event.dataItem
+                    Log.d("Watchbatterymonitor", "Received data: ${item.uri}")
+                    Log.d("Watchbatterymonitor", "Data path: ${item.uri.path}")
+                    Log.d("Watchbatterymonitor", "Data ${item.data}")
                     if (item.uri.path == dataPath) {
-                        val data: String? = DataMapItem.fromDataItem(item).dataMap.getString("data")
-                        Log.d("Watchbatterymonitor", "Event data: $data")
-                        val msg = JSONObject(data!!)
-                        // val timestamp = msg.getLong("timestamp")
-                        val batteryLevel = msg.getInt("batteryLevel")
-                        val isCharging = msg.getBoolean("isCharging")
-                        makeNotification(batteryLevel, isCharging)
+                        processDataEvent(event)
                     }
                 }
             }
             dataEventBuffer.release()
         }
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d("onStartCommand", "notifyValue: $notifyValue")
+        notifyValue = intent?.getIntExtra("notifyValue", notifyValue)!!
+        setupListener()
         return START_STICKY
     }
 
@@ -143,10 +151,9 @@ class BatteryMonitoringService : Service() {
         super.onCreate()
         initForegroundService()
         registerReceiver(
-            notifyValueReceiver,
-            IntentFilter("NotifyValueUpdate"),
-            RECEIVER_NOT_EXPORTED
+            notifyValueReceiver, IntentFilter("NotifyValueUpdate"), RECEIVER_NOT_EXPORTED
         )
+        createNotificationChannel()
     }
 
     override fun onBind(intent: Intent?): IBinder? {
