@@ -26,8 +26,7 @@ fun vibrate(context: Context) {
         context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
     val vibrator = vibratorManager.defaultVibrator
     val vibrationEffect = VibrationEffect.createWaveform(
-        longArrayOf(500, 50, 500, 50, 1000, 200, 500, 50, 500, 50, 1000),
-        intArrayOf(
+        longArrayOf(500, 50, 500, 50, 1000, 200, 500, 50, 500, 50, 1000), intArrayOf(
             VibrationEffect.DEFAULT_AMPLITUDE,
             0,
             VibrationEffect.DEFAULT_AMPLITUDE,
@@ -39,8 +38,7 @@ fun vibrate(context: Context) {
             VibrationEffect.DEFAULT_AMPLITUDE,
             0,
             VibrationEffect.DEFAULT_AMPLITUDE
-        ),
-        -1
+        ), -1
     )
     vibrator.vibrate(vibrationEffect)
 }
@@ -71,17 +69,15 @@ fun createBatteryChargeInfoDataMap(
 
 fun makeLoudNotification(context: Context, notifyLevel: Int) {
     val channel = NotificationChannel(
-        "Normal Channel",
-        "Battery reached wanted value",
-        NotificationManager.IMPORTANCE_DEFAULT
+        "Normal Channel", "Battery reached wanted value", NotificationManager.IMPORTANCE_DEFAULT
     )
     val notificationManager = context.getSystemService(NotificationManager::class.java)
     notificationManager.createNotificationChannel(channel)
 
-    val builder = NotificationCompat.Builder(context, "Normal Channel")
-        .setSmallIcon(R.drawable.lightning)
-        .setContentTitle("Watch Battery reached $notifyLevel%!")
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+    val builder =
+        NotificationCompat.Builder(context, "Normal Channel").setSmallIcon(R.drawable.lightning)
+            .setContentTitle("Watch Battery reached $notifyLevel%!")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
     notificationManager.notify(Random.nextInt(), builder.build())
 }
 
@@ -152,9 +148,7 @@ class BatteryMonitoringService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun initVibrateNotify() {
         registerReceiver(
-            notifyValueReceiver,
-            IntentFilter("NotifyValueUpdate"),
-            RECEIVER_NOT_EXPORTED
+            notifyValueReceiver, IntentFilter("NotifyValueUpdate"), RECEIVER_NOT_EXPORTED
         )
     }
 
@@ -169,12 +163,9 @@ class BatteryMonitoringService : Service() {
 
     private fun initForegroundService() {
         val foregroundChannelId = "Foreground Service"
-        val name = "Batterymonitor (Foreground Service)"
-        val descriptionText = ""
+        val name = "Foreground Service"
         val importance = NotificationManager.IMPORTANCE_LOW
-        val channel = NotificationChannel(foregroundChannelId, name, importance).apply {
-            description = descriptionText
-        }
+        val channel = NotificationChannel(foregroundChannelId, name, importance)
         // Register the channel with the system.
         val notificationManager: NotificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -183,7 +174,7 @@ class BatteryMonitoringService : Service() {
             NotificationCompat.Builder(this, foregroundChannelId).setSmallIcon(R.drawable.cogs)
                 .setContentTitle("Watch Charging Monitor")
                 .setContentText("Watch Charging Monitor foreground service is running")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT).build()
+                .setPriority(NotificationCompat.PRIORITY_LOW).build()
         startForeground(1, notification)
     }
 

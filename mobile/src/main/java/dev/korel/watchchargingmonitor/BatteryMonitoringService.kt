@@ -27,10 +27,9 @@ class BatteryMonitoringService : Service() {
     private val dataPath = "/WatchChargingMonitor"
     private var didWarn = false
     private var notifyValue = 80
-    private val mainNotificationBuilder = NotificationCompat.Builder(this, channelId)
-        .setSmallIcon(R.drawable.battery)
-        .setContentTitle("Watch Battery")
-        .setOnlyAlertOnce(true)
+    private val mainNotificationBuilder =
+        NotificationCompat.Builder(this, channelId).setSmallIcon(R.drawable.battery)
+            .setContentTitle("Watch Battery").setOnlyAlertOnce(true)
 
     private val notifyValueReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -65,16 +64,17 @@ class BatteryMonitoringService : Service() {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
 
-        val builder = NotificationCompat.Builder(this, "Normal Channel")
-            .setSmallIcon(R.drawable.lightning)
-            .setContentTitle("Watch Battery is over $notifyLevel%!")
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        val builder =
+            NotificationCompat.Builder(this, "Normal Channel").setSmallIcon(R.drawable.lightning)
+                .setContentTitle("Watch Battery is over $notifyLevel%!")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
         notificationManager.notify(notificationId + 1, builder.build())
     }
 
     private fun makeNotification(batteryLevel: Float, isCharging: Boolean) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-            != PackageManager.PERMISSION_GRANTED
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
         ) {
             return
         }
@@ -94,7 +94,7 @@ class BatteryMonitoringService : Service() {
     }
 
     private fun initForegroundService() {
-        val foregroundChannelId = "foregroundService"
+        val foregroundChannelId = "Foreground Service"
         val name = "Foreground Service"
         val importance = NotificationManager.IMPORTANCE_LOW
         val channel = NotificationChannel(foregroundChannelId, name, importance)
@@ -102,11 +102,10 @@ class BatteryMonitoringService : Service() {
         val notificationManager: NotificationManager =
             getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(channel)
-        val notification = NotificationCompat.Builder(this, foregroundChannelId)
-            .setSmallIcon(R.drawable.cogs)
-            .setContentTitle("Battery Monitor")
-            .setContentText("Battery monitor foreground service is running")
-            .build()
+        val notification =
+            NotificationCompat.Builder(this, foregroundChannelId).setSmallIcon(R.drawable.cogs)
+                .setContentTitle("Watch Charging Monitor")
+                .setContentText("Watch Charging Monitor foreground service is running").build()
         startForeground(1, notification)
     }
 
@@ -152,9 +151,7 @@ class BatteryMonitoringService : Service() {
         super.onCreate()
         initForegroundService()
         registerReceiver(
-            notifyValueReceiver,
-            IntentFilter("NotifyValueUpdate"),
-            RECEIVER_NOT_EXPORTED
+            notifyValueReceiver, IntentFilter("NotifyValueUpdate"), RECEIVER_NOT_EXPORTED
         )
         createNotificationChannel()
     }
